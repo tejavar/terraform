@@ -1692,6 +1692,34 @@ func TestAssertPlanValid(t *testing.T) {
 			}),
 			nil,
 		},
+
+		"refined unknown values can become less refined": {
+			// Providers often can't preserve refinements through the provider
+			// wire protocol: although we do have a defined serialization for
+			// it, most providers were written before there was any such
+			// thing as refinements, and in future there might be new
+			// refinements that even refinement-aware providers don't know
+			// how to preserve, so we allow them to get dropped here as
+			// a concession to backward-compatibility.
+			&configschema.Block{
+				Attributes: map[string]*configschema.Attribute{
+					"a": {
+						Type:     cty.String,
+						Required: true,
+					},
+				},
+			},
+			cty.ObjectVal(map[string]cty.Value{
+				"a": cty.StringVal("old"),
+			}),
+			cty.ObjectVal(map[string]cty.Value{
+				"a": cty.UnknownVal(cty.String).RefineNotNull(),
+			}),
+			cty.ObjectVal(map[string]cty.Value{
+				"a": cty.UnknownVal(cty.String),
+			}),
+			nil,
+		},
 	}
 
 	for name, test := range tests {
